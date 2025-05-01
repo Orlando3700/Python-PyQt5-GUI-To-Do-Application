@@ -1,6 +1,7 @@
 # Provides access to system-specific parameters and
 # functions (like sys.argv for app startup).
 import sys
+import json
 
 # from PyQt5.QtWidgets import ...: Imports essential PyQt5
 # widgets used to build the GUI:
@@ -14,6 +15,7 @@ import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, QPushButton, QListWidget, QListWidgetItem, QDialog, QLabel
 
 from PyQt5.QtGui import QFont, QBrush, QColor
+from test.test_decimal import file
 
 # This defines a new class EditDialog that inherits from
 # QDialog, which is a built-in PyQt5 class used to create
@@ -93,9 +95,12 @@ class ToDoApp(QWidget):
         button_layout = QHBoxLayout()
         
         # Delete button
-        self.delete_button = QPushButton("Delete Selected Task")        
+        self.delete_button = QPushButton("Delete Selected Task")
+        # Edit button       
         self.edit_button = QPushButton("Edit Selected Task")
+        # Add delete button to layout
         button_layout.addWidget(self.delete_button)
+        # Add edit button to layout
         button_layout.addWidget(self.edit_button)
         
         # Adds the widgets to the vertical layout (top-to-bottom order).
@@ -119,6 +124,95 @@ class ToDoApp(QWidget):
         self.delete_button.clicked.connect(self.delete_task);
         self.edit_button.clicked.connect(self.edit_task)
         self.task_list.itemClicked.connect(self.toggle_task_status)
+        
+        self.setStyleSheet("background-color: #f0f0f0;")  # Background color
+
+        self.input_field.setStyleSheet("""
+            QLineEdit {
+                padding: 6px;
+                border: 1px solid gray;
+                border-radius: 4px;
+                background-color: white;
+            }
+        """)
+
+        # Green for Add
+        self.add_button.setStyleSheet("""
+            QPushButton {
+                background-color: #4CAF50;
+                color: white;
+                font-weight: bold;
+                border: none;
+                padding: 8px;
+                border-radius: 5px;
+            }
+            QPushButton:hover {
+                background-color: #45a049;
+            }
+        """)
+
+        # Red for Delete
+        self.delete_button.setStyleSheet("""
+            QPushButton {
+                background-color: #f44336;
+                color: white;
+                font-weight: bold;
+                border: none;
+                padding: 8px;
+                border-radius: 5px;
+            }
+        QPushButton:hover {
+            background-color: #d32f2f;
+        }
+    """)
+
+        # Yellow for Edit
+        self.edit_button.setStyleSheet("""
+            QPushButton {
+                background-color: #FFC107;
+                color: black;
+                font-weight: bold;
+                border: none;
+                padding: 8px;
+                border-radius: 5px;
+            }
+        QPushButton:hover {
+            background-color: #e6ac00;
+        }
+    """)
+
+        self.task_list.setStyleSheet("""
+            QListWidget {
+                background-color: white;
+                border: 1px solid #ccc;
+            }
+        """)
+        
+        # Load existing tasks
+        self.load_tasks()
+        
+    # This defines a method to save all current tasks to a file.    
+    def save_tasks(self, filename="tasks.json"):
+        # Opens the file named tasks.json in write mode ("w").
+        # with ensures the file is properly closed after writing.
+        with open(filename, "w") as file:
+            # Saves (dumps) the self.tasks dictionary to the file in JSON format.
+            # This records both the task names and their completion status
+            json.dump(self.tasks, file)
+    
+    # This method attempts to load tasks from a file.        
+    def load_tasks(self, filename="tasks.json"):
+        # Attempts to open the file in read mode ("r")
+        try:
+            with open(filename, "r") as file:
+                # Loads the JSON content and stores it in self.tasks
+                self.tasks = json.load(file)
+                # Loops through each saved task and its completion status.
+                # Calls add_list_item() to recreate the visual list in the GUI.
+                for task, completed in self.tasks.items():
+                    self.add_list_item(task, completed)
+        except FileNotFoundError:
+            self.tasks = {}
     
     # Gets the text from the input field.
     def add_task(self):
@@ -133,6 +227,7 @@ class ToDoApp(QWidget):
             self.add_list_item(task, False)
             # Clears the input field for the next entry.
             self.input_field.clear()
+            self.save_tasks() # Save after adding
 
         # if task:    # Checks if the input is not empty.
             # self.tasks.append(task) # Adds the task to the internal list.
@@ -144,11 +239,13 @@ class ToDoApp(QWidget):
         # Loops through all selected tasks
         for item in selected_items:
             # Removes the checkmark symbol if present to get the actual task text.
-            task_text = item.text().replace("✔ ", "")  # Strip checkmark\
-            # Removes the task from the internal dictionary
-            del self.tasks[task_text]
-            # Remove from UI list
-            self.task_list.takeItem(self.task_list.row(item))
+            task_text = item.text().replace("✔ ", "")  # Strip checkmark
+            if task_text in self.tasks:
+                # Removes the task from the internal dictionary
+                del self.tasks[task_text]
+                # Remove from UI list
+                self.task_list.takeItem(self.task_list.row(item))
+                self.save_tasks() # Save after deleting
             
             # Remove from internal list
             # self.tasks.remove(item.text())
@@ -156,10 +253,12 @@ class ToDoApp(QWidget):
     def toggle_task_status(self, item):
         # Strips the checkmark from the displayed task name to get the real key.
         task_text = item.text().replace("✔ ", "")
-        # Reverses the current completion status (True becomes False and vice versa).
-        self.tasks[task_text] = not self.tasks[task_text]  # Toggle status
-        # Updates the visual appearance of the task to reflect the new status
-        self.update_list_item(item, task_text, self.tasks[task_text])
+        if task_text in self.tasks:
+            # Reverses the current completion status (True becomes False and vice versa).
+            self.tasks[task_text] = not self.tasks[task_text]  # Toggle status
+            # Updates the visual appearance of the task to reflect the new status
+            self.update_list_item(item, task_text, self.tasks[task_text])
+            self.save_tasks() # Save after status change
         
     def edit_task(self):
         # Gets the selected task. If none is selected, it exits the function.
@@ -185,6 +284,7 @@ class ToDoApp(QWidget):
                 item.setText("")  # Clear current item temporarily
                 # Updates the visible list item with the new task name and status
                 self.update_list_item(item, new_text, completed)
+                self.save_tasks() # Save after editing
 
     def add_list_item(self, task, completed):
         # Creates a new list widget item.
@@ -210,6 +310,7 @@ class ToDoApp(QWidget):
 if __name__ == "__main__":
     # Creates the application instance and passes command-line arguments.
     app = QApplication(sys.argv)
+    app.setStyleSheet("QWidget { font-family: Arial; font-size: 14px; }")
     # Creates the main app window and displays it.
     window = ToDoApp()
     window.show()
