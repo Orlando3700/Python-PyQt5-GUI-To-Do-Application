@@ -29,7 +29,7 @@ class EditDialog(QDialog):
         super().__init__()
         # Sets the title of the dialog window 
         self.setWindowTitle("Edit Task")
-        self.setGeometry(150, 150, 300, 100)
+        self.setGeometry(250, 250, 400, 200)
         # Creates a vertical layout so widgets stack from top to bottom.
         self.layout = QVBoxLayout()
 
@@ -39,6 +39,8 @@ class EditDialog(QDialog):
         self.input_field.setText(old_text)
         # Creates a button labeled "Save" which will be clicked to confirm the changes.
         self.save_button = QPushButton("Save")
+        self.save_button.setObjectName("SaveButton")
+
 
         # Adds a label above the input field that says "Edit task:"
         self.layout.addWidget(QLabel("Edit task:"))
@@ -68,7 +70,7 @@ class ToDoApp(QWidget):
         super().__init__()
         # Sets the window title and size/position
         self.setWindowTitle("To-Do List App")
-        self.setGeometry(100, 100, 400, 350)
+        self.setGeometry(200, 200, 500, 450)
         
         # A Python list to keep track of tasks internally
         # self.tasks = []
@@ -124,69 +126,6 @@ class ToDoApp(QWidget):
         self.delete_button.clicked.connect(self.delete_task);
         self.edit_button.clicked.connect(self.edit_task)
         self.task_list.itemClicked.connect(self.toggle_task_status)
-        
-        self.setStyleSheet("background-color: #f0f0f0;")  # Background color
-
-        self.input_field.setStyleSheet("""
-            QLineEdit {
-                padding: 6px;
-                border: 1px solid gray;
-                border-radius: 4px;
-                background-color: white;
-            }
-        """)
-
-        # Green for Add
-        self.add_button.setStyleSheet("""
-            QPushButton {
-                background-color: #4CAF50;
-                color: white;
-                font-weight: bold;
-                border: none;
-                padding: 8px;
-                border-radius: 5px;
-            }
-            QPushButton:hover {
-                background-color: #45a049;
-            }
-        """)
-
-        # Red for Delete
-        self.delete_button.setStyleSheet("""
-            QPushButton {
-                background-color: #f44336;
-                color: white;
-                font-weight: bold;
-                border: none;
-                padding: 8px;
-                border-radius: 5px;
-            }
-        QPushButton:hover {
-            background-color: #d32f2f;
-        }
-    """)
-
-        # Yellow for Edit
-        self.edit_button.setStyleSheet("""
-            QPushButton {
-                background-color: #FFC107;
-                color: black;
-                font-weight: bold;
-                border: none;
-                padding: 8px;
-                border-radius: 5px;
-            }
-        QPushButton:hover {
-            background-color: #e6ac00;
-        }
-    """)
-
-        self.task_list.setStyleSheet("""
-            QListWidget {
-                background-color: white;
-                border: 1px solid #ccc;
-            }
-        """)
         
         # Load existing tasks
         self.load_tasks()
@@ -308,15 +247,22 @@ class ToDoApp(QWidget):
 
 # This block runs the app only if this file is executed directly.
 if __name__ == "__main__":
-    # Creates the application instance and passes command-line arguments.
     app = QApplication(sys.argv)
-    app.setStyleSheet("QWidget { font-family: Arial; font-size: 14px; }")
-    # Creates the main app window and displays it.
+
+    # Load external QSS stylesheet
+    with open("style.qss", "r") as file:
+        app.setStyleSheet(file.read())
+
     window = ToDoApp()
+
+    # Set object names for styling
+    window.add_button.setObjectName("AddTask")
+    window.delete_button.setObjectName("DeleteTask")
+    window.edit_button.setObjectName("EditTask")
+
     window.show()
-    # Starts the application’s event loop (waiting for user interaction).
-    # sys.exit ensures the program exits cleanly when the window is closed.
     sys.exit(app.exec_())
+
     
     
     
